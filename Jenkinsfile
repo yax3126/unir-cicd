@@ -1,6 +1,8 @@
 pipeline {
     
-    agent any
+    agent {
+        label 'docker'
+    }
 
     environment {
         RESULTS_DIR = 'results'
