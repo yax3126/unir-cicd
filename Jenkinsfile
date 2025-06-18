@@ -15,27 +15,27 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building stage!'
-                sh 'make build'
+                bat 'make build'
             }
         }
 
         stage('Unit tests') {
             steps {
-                sh 'make test-unit'
+                bat 'make test-unit'
                 archiveArtifacts artifacts: "${RESULTS_DIR}/*.xml"
             }
         }
 
         stage('API tests') {
             steps {
-                sh 'make test-api'
+                bat 'make test-api'
                 archiveArtifacts artifacts: "${RESULTS_DIR}/api_*.xml"
             }
         }
 
         stage('E2E tests') {
             steps {
-                sh 'make test-e2e'
+                bat 'make test-e2e'
                 archiveArtifacts artifacts: "${RESULTS_DIR}/e2e_*.xml"
             }
         }
