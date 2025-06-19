@@ -43,12 +43,12 @@ pipeline {
 
     post {
         always {
-            junit 'results/unit_result.xml'
+            echo '🎯 Archiving test reports...'
             junit 'results/api_result.xml'
-            junit 'results/e2e_result.xml' // ahora sí estará presente
+            junit 'results/e2e_result.xml' // Este es el generado por Cypress convertido
             archiveArtifacts artifacts: 'results/**/*.*', allowEmptyArchive: true
             cleanWs()
-        }
+    }
     
 
         failure {

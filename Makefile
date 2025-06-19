@@ -51,14 +51,22 @@ test-api:
 #	docker network rm calc-test-e2e || true
 
 test-e2e:
-	docker network create calc-test-e2e || exit 0
-	-docker rm -f apiserver calc-web e2e-tests
+#	@echo "⛓️  Creando red de red de test E2E..."
+	-docker network create calc-test-e2e || true
 
-	# Levantar los contenedores backend y frontend
+#	@echo "🧹 Eliminando contenedores anteriores si existen..."
+	-docker rm -f apiserver calc-web e2e-tests || true
+
+#	@echo "🚀 Levantando backend..."
 	docker run -d --network calc-test-e2e --env PYTHONPATH=/opt/calc --name apiserver --env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest flask run --host=0.0.0.0
+
+#	@echo "🌐 Levantando frontend..."
 	docker run -d --network calc-test-e2e --name calc-web -p 80:80 calc-web
 
-	# Crear el contenedor Cypress con volumen persistente para resultados
+#	@echo "📁 Creando directorio local de resultados..."
+	mkdir -p results
+
+#	@echo "🧪 Creando contenedor e2e-tests..."
 	docker create --network calc-test-e2e \
 		--name e2e-tests \
 		-v $$PWD/results:/results \
@@ -71,16 +79,16 @@ test-e2e:
 		  npx mochawesome-junit-reporter /results/mochawesome.json > /results/e2e_result.xml \
 		"
 
-	# Copiar tests y config
+#	@echo "📦 Copiando archivos de prueba al contenedor..."
 	docker cp ./test/e2e/cypress.json e2e-tests:/cypress.json
 	docker cp ./test/e2e/cypress e2e-tests:/cypress
 
-	# Ejecutar los tests
+#	@echo "🏁 Ejecutando pruebas E2E..."
 	docker start -a e2e-tests || echo "E2E tests fallaron"
 
-	# Eliminar contenedores
-	-docker rm -f apiserver calc-web e2e-tests
-	docker network rm calc-test-e2e || exit 0
+#	@echo "🧽 Limpiando contenedores y red..."
+	-docker rm -f apiserver calc-web e2e-tests || true
+	-docker network rm calc-test-e2e || true
 
 
 run-web:
