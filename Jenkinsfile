@@ -49,6 +49,7 @@ pipeline {
             junit 'results/api_result.xml'
             junit 'results/e2e_result.xml' // Si reactivas E2E
             archiveArtifacts artifacts: 'results/**/*.*', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'results/e2e_result.xml', allowEmptyArchive: true
             cleanWs()
     }
 

@@ -68,12 +68,12 @@ test-api:
 
 test-e2e:
 #	@echo "🧹 Limpiando contenedores anteriores E2E..."
-	-docker rm -f apiserver || true
-	-docker rm -f calc-web || true
-	-docker rm -f e2e-tests || true
+	-docker rm -f apiserver
+	-docker rm -f calc-web
+	-docker rm -f e2e-tests
 
 #	@echo "🔗 Creando red E2E si no existe..."
-	-docker network create calc-test-e2e || true
+	-@docker network create calc-test-e2e
 
 #	@echo "🚀 Levantando backend..."
 	docker run -d --network calc-test-e2e --env PYTHONPATH=/opt/calc --name apiserver \
@@ -84,29 +84,29 @@ test-e2e:
 	docker run -d --network calc-test-e2e --name calc-web -p 80:80 calc-web
 
 #	@echo "🧪 Preparando contenedor de pruebas E2E..."
-	docker create --network calc-test-e2e --name e2e-tests -v $$PWD/results:/results \
-		cypress/included:4.9.0 --browser chrome
+	docker create --network calc-test-e2e --name e2e-tests cypress/included:4.9.0 --browser chrome
 
 #	@echo "📂 Copiando configuración y tests de Cypress..."
 	docker cp ./test/e2e/cypress.json e2e-tests:/cypress.json
 	docker cp ./test/e2e/cypress e2e-tests:/cypress
 
 #	@echo "🏃 Ejecutando pruebas E2E..."
-	docker start -a e2e-tests || true
+	docker start -a e2e-tests || echo "E2E tests fallaron"
 
 #	@echo "🧪 Procesando resultados E2E..."
 	docker exec e2e-tests sh -c "\
 		npx mochawesome-merge cypress/results/*.json > cypress/results/mochawesome.json && \
-		npx mochawesome-junit-reporter cypress/results/mochawesome.json > /results/e2e_result.xml" || true
+		npx mochawesome-junit-reporter cypress/results/mochawesome.json > /results/e2e_result.xml" || echo "Procesamiento falló"
 
 #	@echo "📦 Copiando resultados..."
 	-docker cp e2e-tests:/results ./ || echo "No se pudo copiar resultados E2E"
 
 #	@echo "🧽 Limpiando contenedores y red..."
-	-docker rm -f apiserver || true
-	-docker rm -f calc-web || true
-	-docker rm -f e2e-tests || true
-	-docker network rm calc-test-e2e || true
+	-docker rm -f apiserver
+	-docker rm -f calc-web
+	-docker rm -f e2e-tests
+	-docker network rm calc-test-e2e
+
 
 run-web:
 	docker run --rm --volume `pwd`/web:/usr/share/nginx/html  --volume `pwd`/web/constants.local.js:/usr/share/nginx/html/constants.js --name calc-web -p 80:80 nginx
