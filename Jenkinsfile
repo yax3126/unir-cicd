@@ -33,19 +33,21 @@ pipeline {
             }
         }
 
-       /* stage('E2E tests') {
+        stage('E2E tests') {
             steps {
                 bat 'make test-e2e'
-                archiveArtifacts artifacts: "${RESULTS_DIR}/e2e_*.xml"
+                //archiveArtifacts artifacts: "${RESULTS_DIR}/e2e_*.xml"
+                archiveArtifacts artifacts: 'results/e2e_*.xml', allowEmptyArchive: true
             }
         }
-        */
+        
     }
 
     post {
         always {
             junit 'results/unit_result.xml'
             junit 'results/api_result.xml'
+            junit 'results/e2e_result.xml' // Si reactivas E2E
             archiveArtifacts artifacts: 'results/**/*.*', allowEmptyArchive: true
             cleanWs()
     }

@@ -24,13 +24,6 @@ test-unit:
 #	docker rm --force api-tests || true
 #	docker network rm calc-test-api || true
 
-#test-api:
-#	docker network create calc-test-api || exit 0
-#	docker run -d --network calc-test-api --env PYTHONPATH=/opt/calc --name apiserver --env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest flask run --host=0.0.0.0
-#	docker run --network calc-test-api --name api-tests --env PYTHONPATH=/opt/calc --env BASE_URL=http://apiserver:5000/ -w /opt/calc calculator-app:latest pytest --junit-xml=results/api_result.xml -m api
-#	docker cp api-tests:/opt/calc/results ./ || echo "No se pudo copiar resultados API"
-#	docker rm -f api-tests || exit 0
-
 test-api:
 #	@echo "🧹 Limpiando contenedores anteriores..."
 	-docker rm -f apiserver || true
@@ -72,6 +65,48 @@ test-api:
 #	docker rm --force calc-web || true
 #	docker rm --force e2e-tests || true
 #	docker network rm calc-test-e2e || true
+
+test-e2e:
+#	@echo "🧹 Limpiando contenedores anteriores E2E..."
+	-docker rm -f apiserver || true
+	-docker rm -f calc-web || true
+	-docker rm -f e2e-tests || true
+
+#	@echo "🔗 Creando red E2E si no existe..."
+	-docker network create calc-test-e2e || true
+
+#	@echo "🚀 Levantando backend..."
+	docker run -d --network calc-test-e2e --env PYTHONPATH=/opt/calc --name apiserver \
+		--env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest \
+		flask run --host=0.0.0.0
+
+#	@echo "🌐 Levantando frontend..."
+	docker run -d --network calc-test-e2e --name calc-web -p 80:80 calc-web
+
+#	@echo "🧪 Preparando contenedor de pruebas E2E..."
+	docker create --network calc-test-e2e --name e2e-tests -v $$PWD/results:/results \
+		cypress/included:4.9.0 --browser chrome
+
+#	@echo "📂 Copiando configuración y tests de Cypress..."
+	docker cp ./test/e2e/cypress.json e2e-tests:/cypress.json
+	docker cp ./test/e2e/cypress e2e-tests:/cypress
+
+#	@echo "🏃 Ejecutando pruebas E2E..."
+	docker start -a e2e-tests || true
+
+#	@echo "🧪 Procesando resultados E2E..."
+	docker exec e2e-tests sh -c "\
+		npx mochawesome-merge cypress/results/*.json > cypress/results/mochawesome.json && \
+		npx mochawesome-junit-reporter cypress/results/mochawesome.json > /results/e2e_result.xml" || true
+
+#	@echo "📦 Copiando resultados..."
+	-docker cp e2e-tests:/results ./ || echo "No se pudo copiar resultados E2E"
+
+#	@echo "🧽 Limpiando contenedores y red..."
+	-docker rm -f apiserver || true
+	-docker rm -f calc-web || true
+	-docker rm -f e2e-tests || true
+	-docker network rm calc-test-e2e || true
 
 run-web:
 	docker run --rm --volume `pwd`/web:/usr/share/nginx/html  --volume `pwd`/web/constants.local.js:/usr/share/nginx/html/constants.js --name calc-web -p 80:80 nginx
