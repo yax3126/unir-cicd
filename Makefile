@@ -8,9 +8,10 @@ server:
 	docker run --rm --name apiserver --network-alias apiserver --env PYTHONPATH=/opt/calc --env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest flask run --host=0.0.0.0
 
 test-unit:
+	-docker rm -f unit-tests || true
 	docker run --name unit-tests --env PYTHONPATH=/opt/calc -w /opt/calc calculator-app:latest pytest --cov --cov-report=xml:results/coverage.xml --cov-report=html:results/coverage --junit-xml=results/unit_result.xml -m unit || true
-	docker cp unit-tests:/opt/calc/results ./
-	docker rm unit-tests || true
+	docker cp unit-tests:/opt/calc/results ./ || echo "No se pudo copiar resultados UNIT"
+	docker rm -f unit-tests || true
 
 #test-api:
 #	docker network create calc-test-api || true
@@ -23,12 +24,34 @@ test-unit:
 #	docker rm --force api-tests || true
 #	docker network rm calc-test-api || true
 
+#test-api:
+#	docker network create calc-test-api || exit 0
+#	docker run -d --network calc-test-api --env PYTHONPATH=/opt/calc --name apiserver --env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest flask run --host=0.0.0.0
+#	docker run --network calc-test-api --name api-tests --env PYTHONPATH=/opt/calc --env BASE_URL=http://apiserver:5000/ -w /opt/calc calculator-app:latest pytest --junit-xml=results/api_result.xml -m api
+#	docker cp api-tests:/opt/calc/results ./ || echo "No se pudo copiar resultados API"
+#	docker rm -f api-tests || exit 0
+
 test-api:
-	docker network create calc-test-api || exit 0
+#	@echo "🧹 Limpiando contenedores anteriores..."
+	-docker rm -f apiserver || true
+	-docker rm -f api-tests || true
+
+#	@echo "⛓️  Creando red de test si no existe..."
+	-docker network create calc-test-api || true
+
+#	@echo "🚀 Levantando API backend..."
 	docker run -d --network calc-test-api --env PYTHONPATH=/opt/calc --name apiserver --env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest flask run --host=0.0.0.0
+
+#	@echo "🧪 Ejecutando pruebas API..."
 	docker run --network calc-test-api --name api-tests --env PYTHONPATH=/opt/calc --env BASE_URL=http://apiserver:5000/ -w /opt/calc calculator-app:latest pytest --junit-xml=results/api_result.xml -m api
+
+#	@echo "📦 Copiando resultados..."
 	docker cp api-tests:/opt/calc/results ./ || echo "No se pudo copiar resultados API"
-	docker rm -f api-tests || exit 0
+
+#	@echo "🧽 Limpiando contenedores..."
+	-docker rm -f api-tests || true
+	-docker rm -f apiserver || true
+
 
 #test-e2e:
 #	docker network create calc-test-e2e || true

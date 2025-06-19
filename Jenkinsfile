@@ -43,9 +43,11 @@ pipeline {
 
     post {
         always {
-            junit "${RESULTS_DIR}/*_result.xml"
+            junit 'results/unit_result.xml'
+            junit 'results/api_result.xml'
+            archiveArtifacts artifacts: 'results/**/*.*', allowEmptyArchive: true
             cleanWs()
-        }
+    }
 
         failure {
             script {
