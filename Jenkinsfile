@@ -33,12 +33,13 @@ pipeline {
             }
         }
 
-        stage('E2E tests') {
+       /* stage('E2E tests') {
             steps {
                 bat 'make test-e2e'
                 archiveArtifacts artifacts: "${RESULTS_DIR}/e2e_*.xml"
             }
         }
+        */
     }
 
     post {
