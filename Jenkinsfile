@@ -49,7 +49,7 @@ pipeline {
             archiveArtifacts artifacts: 'results/**/*.*', allowEmptyArchive: true
             cleanWs()
         }
-    }
+    
 
         failure {
             script {
