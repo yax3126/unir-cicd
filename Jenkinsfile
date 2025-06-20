@@ -47,11 +47,17 @@ pipeline {
         always {
             junit 'results/unit_result.xml'
             junit 'results/api_result.xml'
-            junit 'results/e2e_result.xml' // Si reactivas E2E
+        // Validar si existe el resultado de E2E
+            script {
+                if (fileExists('results/e2e_result.xml')) {
+                    junit 'results/e2e_result.xml'
+                } else {
+                    echo "⚠️ No se encontraron resultados E2E. ¿Fallo en ejecución o generación?"
+                }
+            }
             archiveArtifacts artifacts: 'results/**/*.*', allowEmptyArchive: true
-            archiveArtifacts artifacts: 'results/e2e_result.xml', allowEmptyArchive: true
             cleanWs()
-    }
+        }
 
         failure {
             script {

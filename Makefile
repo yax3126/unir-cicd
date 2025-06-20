@@ -67,41 +67,36 @@ test-api:
 #	docker network rm calc-test-e2e || true
 
 test-e2e:
-#	@echo "🧹 Limpiando contenedores anteriores E2E..."
+	@echo "🧹 Limpiando contenedores anteriores E2E..."
 	-docker rm -f apiserver
 	-docker rm -f calc-web
 	-docker rm -f e2e-tests
 
-#	@echo "🔗 Creando red E2E si no existe..."
+	@echo "🔗 Creando red E2E si no existe..."
 	-@docker network create calc-test-e2e
 
-#	@echo "🚀 Levantando backend..."
+	@echo "🚀 Levantando backend..."
 	docker run -d --network calc-test-e2e --env PYTHONPATH=/opt/calc --name apiserver \
 		--env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest \
 		flask run --host=0.0.0.0
 
-#	@echo "🌐 Levantando frontend..."
+	@echo "🌐 Levantando frontend..."
 	docker run -d --network calc-test-e2e --name calc-web -p 80:80 calc-web
 
-#	@echo "🧪 Preparando contenedor de pruebas E2E..."
-	docker create --network calc-test-e2e --name e2e-tests cypress/included:4.9.0 --browser chrome
+	@echo "🧪 Ejecutando Cypress directamente..."
+	docker run --name e2e-tests --network calc-test-e2e \
+		-v $(shell pwd)/test/e2e/cypress.json:/cypress.json \
+		-v $(shell pwd)/test/e2e/cypress:/cypress \
+		-v $(shell pwd)/results:/results \
+		cypress/included:4.9.0 --browser chrome || echo "❌ E2E tests fallaron"
 
-#	@echo "📂 Copiando configuración y tests de Cypress..."
-	docker cp ./test/e2e/cypress.json e2e-tests:/cypress.json
-	docker cp ./test/e2e/cypress e2e-tests:/cypress
+	@echo "📦 Procesando resultados..."
+	docker run --rm -v $(shell pwd)/results:/results \
+		node:16-alpine sh -c "\
+		npx mochawesome-merge /results/*.json > /results/mochawesome.json && \
+		npx mochawesome-junit-reporter /results/mochawesome.json > /results/e2e_result.xml" || echo "⚠️ Procesamiento falló"
 
-#	@echo "🏃 Ejecutando pruebas E2E..."
-	docker start -a e2e-tests || echo "E2E tests fallaron"
-
-#	@echo "🧪 Procesando resultados E2E..."
-	docker exec e2e-tests sh -c "\
-		npx mochawesome-merge cypress/results/*.json > cypress/results/mochawesome.json && \
-		npx mochawesome-junit-reporter cypress/results/mochawesome.json > /results/e2e_result.xml" || echo "Procesamiento falló"
-
-#	@echo "📦 Copiando resultados..."
-	-docker cp e2e-tests:/results ./ || echo "No se pudo copiar resultados E2E"
-
-#	@echo "🧽 Limpiando contenedores y red..."
+	@echo "🧽 Limpiando contenedores y red..."
 	-docker rm -f apiserver
 	-docker rm -f calc-web
 	-docker rm -f e2e-tests
