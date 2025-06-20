@@ -25,23 +25,23 @@ test-unit:
 #	docker network rm calc-test-api || true
 
 test-api:
-#	@echo "🧹 Limpiando contenedores anteriores..."
+#	@echo "Limpiando contenedores anteriores"
 	-docker rm -f apiserver || true
 	-docker rm -f api-tests || true
 
-#	@echo "⛓️  Creando red de test si no existe..."
+#	@echo "Creando red de test si no existe"
 	-docker network create calc-test-api || true
 
-#	@echo "🚀 Levantando API backend..."
+#	@echo "Levantando API backend"
 	docker run -d --network calc-test-api --env PYTHONPATH=/opt/calc --name apiserver --env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest flask run --host=0.0.0.0
 
-#	@echo "🧪 Ejecutando pruebas API..."
+#	@echo "Ejecutando pruebas API"
 	docker run --network calc-test-api --name api-tests --env PYTHONPATH=/opt/calc --env BASE_URL=http://apiserver:5000/ -w /opt/calc calculator-app:latest pytest --junit-xml=results/api_result.xml -m api
 
-#	@echo "📦 Copiando resultados..."
+#	@echo "Copiando resultados"
 	docker cp api-tests:/opt/calc/results ./ || echo "No se pudo copiar resultados API"
 
-#	@echo "🧽 Limpiando contenedores..."
+#	@echo "Limpiando contenedores"
 	-docker rm -f api-tests || true
 	-docker rm -f apiserver || true
 
@@ -67,36 +67,36 @@ test-api:
 #	docker network rm calc-test-e2e || true
 
 test-e2e:
-	@echo "🧹 Limpiando contenedores anteriores E2E..."
+	@echo "Limpiando contenedores anteriores E2E"
 	-docker rm -f apiserver
 	-docker rm -f calc-web
 	-docker rm -f e2e-tests
 
-	@echo "🔗 Creando red E2E si no existe..."
+	@echo "Creando red E2E si no existe"
 	-@docker network create calc-test-e2e
 
-	@echo "🚀 Levantando backend..."
+	@echo "Levantando backend"
 	docker run -d --network calc-test-e2e --env PYTHONPATH=/opt/calc --name apiserver \
 		--env FLASK_APP=app/api.py -p 5000:5000 -w /opt/calc calculator-app:latest \
 		flask run --host=0.0.0.0
 
-	@echo "🌐 Levantando frontend..."
+	@echo "Levantando frontend"
 	docker run -d --network calc-test-e2e --name calc-web -p 80:80 calc-web
 
-	@echo "🧪 Ejecutando Cypress directamente..."
+	@echo "Ejecutando Cypress"
 	docker run --name e2e-tests --network calc-test-e2e \
 		-v $(shell pwd)/test/e2e/cypress.json:/cypress.json \
 		-v $(shell pwd)/test/e2e/cypress:/cypress \
 		-v $(shell pwd)/results:/results \
-		cypress/included:4.9.0 --browser chrome || echo "❌ E2E tests fallaron"
+		cypress/included:4.9.0 --browser chrome || echo "E2E tests fallaron"
 
-	@echo "📦 Procesando resultados..."
+	@echo "Procesando resultados"
 	docker run --rm -v $(shell pwd)/results:/results \
 		node:16-alpine sh -c "\
 		npx mochawesome-merge /results/*.json > /results/mochawesome.json && \
-		npx mochawesome-junit-reporter /results/mochawesome.json > /results/e2e_result.xml" || echo "⚠️ Procesamiento falló"
+		npx mochawesome-junit-reporter /results/mochawesome.json > /results/e2e_result.xml" || echo "El Procesamiento falló"
 
-	@echo "🧽 Limpiando contenedores y red..."
+	@echo "Limpiando contenedores y red"
 	-docker rm -f apiserver
 	-docker rm -f calc-web
 	-docker rm -f e2e-tests

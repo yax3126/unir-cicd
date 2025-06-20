@@ -52,7 +52,7 @@ pipeline {
                 if (fileExists('results/e2e_result.xml')) {
                     junit 'results/e2e_result.xml'
                 } else {
-                    echo "⚠️ No se encontraron resultados E2E. ¿Fallo en ejecución o generación?"
+                    echo "No se encontraron resultados E2E. ¿Fallo en ejecución o generación?"
                 }
             }
             archiveArtifacts artifacts: 'results/**/*.*', allowEmptyArchive: true
